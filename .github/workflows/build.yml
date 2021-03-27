@@ -1,0 +1,50 @@
+name: Plone Docker RedTurtle Fork Image - Dev
+on:
+  push:
+    branches: [ build ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [5.2.4]
+        os: [debian]
+
+    steps:
+    - name: Extract version
+      id: version
+      env:
+        VERSION: ${{ matrix.version }}
+      run: echo ::set-output name=major::${VERSION%.*}
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v2
+      with:
+        tags: redturtletech/plone:${{ matrix.version }}-${{ matrix.os }}-dev
+        context: ${{ steps.version.outputs.major }}/${{ matrix.version }}/${{ matrix.os }} 
+        pull: true
+        push: true
+        builder: ${{ steps.buildx.outputs.name }}
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+
