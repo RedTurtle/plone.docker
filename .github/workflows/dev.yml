@@ -1,7 +1,7 @@
 name: Plone Docker RedTurtle Fork Image - Dev
 on:
   push:
-    branches: [ build ]
+    branches: [ dev ]
 jobs:
   build:
     runs-on: ubuntu-latest
